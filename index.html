@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>QCM CACES – Les catégories d'engins</title>
+<style>
+  /* ---------- Thème & layout ---------- */
+  :root { --orange:#ff6600; --noir:#222; --gris:#f3f3f3; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: var(--gris);
+    color: var(--noir);
+    margin: 0;
+    min-height: 100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    padding:16px;
+    box-sizing:border-box;
+  }
+
+  .banner {
+    background:var(--noir);
+    color:#fff;
+    padding:10px;
+    border-radius:10px;
+    text-align:center;
+    font-weight:700;
+    margin-bottom:15px;
+    width:100%;
+    max-width:820px;
+    box-sizing:border-box;
+  }
+
+  h1 { color:var(--orange); margin:8px 0; text-align:center; }
+  .subtitle { color:#555; text-align:center; margin-bottom:18px; }
+
+  .question {
+    background:#fff;
+    padding:16px;
+    margin:8px auto;
+    border-left:8px solid var(--orange);
+    border-radius:10px;
+    box-shadow:0 3px 6px rgba(0,0,0,0.08);
+    width:100%;
+    max-width:820px;
+    box-sizing:border-box;
+    text-align:center;
+  }
+  .question p { font-weight:600; margin:8px 0; }
+
+  .answers {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    margin-top:6px;
+  }
+  .answers label {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    width:100%;
+    max-width:520px;
+    padding:8px 10px;
+    border-radius:8px;
+    cursor:pointer;
+    border:1px solid #eee;
+  }
+  .answers input[type="radio"] { transform:scale(1.05); }
+
+  button {
+    background:var(--orange);
+    color:#fff;
+    border:none;
+    padding:10px 18px;
+    border-radius:8px;
+    font-size:1rem;
+    cursor:pointer;
+  }
+  button[disabled] { opacity:0.6; cursor:default; }
+  button:hover:not([disabled]) { background:#e65c00; }
+
+  .footer { text-align:center; color:#777; margin-top:20px; font-size:0.9rem; }
+
+  @media (max-width:600px) {
+    .question{ padding:14px; max-width:95%; }
+    .answers label{ max-width:100%; }
+    button{ padding:10px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Banniere + titre -->
+<div class="banner" id="quizBanner">🚧 Les catégories d'engins 🚜</div>
+<h1>ÉVALUATION</h1>
+<p class="subtitle" id="quizSubtitle">Répondez aux questions tirées au hasard</p>
+
+<!-- Écran d'accueil : saisie du nom -->
+<div id="intro" style="width:100%; max-width:820px; display:flex; justify-content:center;">
+  <div class="question" style="text-align:center;">
+    <p><strong>Bienvenue</strong></p>
+    <p>Merci d'indiquer votre nom (pas le prénom) avant de commencer :</p>
+    <input id="candidateName" type="text" placeholder="Nom de l'élève"
+           style="padding:8px; width:80%; max-width:320px; border-radius:6px; border:1px solid #ccc;">
+    <div style="margin-top:12px;">
+      <button id="startBtn" disabled>➡️ Suivant</button>
+    </div>
+  </div>
+</div>
+
+<!-- Conteneur des questions rendu dynamiquement -->
+<div id="quiz" style="width:100%; max-width:820px; min-height:220px; display:none; align-items:center; justify-content:center;"></div>
+
+<!-- Zone d'état et bouton 'nouvelle évaluation' -->
+<div style="width:100%; max-width:820px; text-align:center; margin-top:12px;">
+  <button id="restartBtn" style="display:none;">🔄 Nouvelle évaluation</button>
+  <div id="saveStatus" style="margin-top:8px; color:#444; font-size:0.95rem;"></div>
+</div>
+
+<p id="result" style="text-align:center; font-weight:700; margin-top:14px;"></p>
+<p class="footer">© Formation Sécurité CACES® R482A – Quiz interactif</p>
+
+<script>
+/* ============================ */
+/*         CONFIG              */
+/* ============================ */
+const QUIZ_NAME = "Les catégories d'engins";
+const RESULTS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzSnnlxH2dCzkVqobrQX-E4n4lo-WcxoDvmLHr7cLn35d4xploO_K3p9tNuY0OweRsW/exec";
+
+/* ============================ */
+/*         QUESTIONS            */
+/* ============================ */
+const allQuestions = [
+  {
+    "text": "Les pelles hydrauliques de 6 tonnes ou moins appartiennent à la catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse sur pneus de 4 tonnes fait partie de la catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une pelle hydraulique sur pneus de 7 tonnes est incluse dans la catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un compacteur de 5 tonnes est classé dans la catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un moto-basculeur de 8 tonnes de charge utile appartient à la catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les tracteurs agricoles de catégorie A ne doivent pas dépasser 100 cv.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les chargeuses-pelleteuses de masse ≤ 6 tonnes sont en catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse sur chenilles de 6 tonnes est un engin de catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une pelle hydraulique de 6,1 tonnes peut être classée en catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les moto-basculeurs de charge utile ≤ 6 tonnes sont classés en catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une minipelle de 3 tonnes appartient à la catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les tracteurs agricoles ≤ 73,6 kW relèvent de la catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les chargeuses de plus de 6 tonnes sont incluses dans la catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un compacteur de 2 tonnes est un engin de catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les pelles hydrauliques de masse ≤ 6 tonnes peuvent être à chenilles ou pneus.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse-pelleteuse de 7 tonnes relève de la catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Tous les tracteurs agricoles, quelle que soit leur puissance, sont en catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les engins compacts de catégorie A dépassent toujours 6 tonnes.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les compacteurs de masse ≤ 6 tonnes appartiennent à la catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les pelles hydrauliques de plus de 6 tonnes sont classées en catégorie B1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une pelle multifonctions appartient à la catégorie B1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une pelle hydraulique de 5 tonnes est incluse dans la catégorie B1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les pelles hydrauliques de plus de 6 tonnes peuvent être sur chenilles ou pneus.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les pelles multifonctions sont les seuls engins de la catégorie B1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une pelle hydraulique de 10 tonnes relève de la catégorie B1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse de 8 tonnes est classée en catégorie B1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une pelle multifonctions de 12 tonnes appartient à la catégorie B1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les pelles hydrauliques de masse ≤ 6 tonnes sont en catégorie B1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les pelles multifonctions font partie des engins de déplacement séquentiel.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une pelle hydraulique sur pneus de 7 tonnes relève de la catégorie B1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un compacteur de 7 tonnes est classé en catégorie B1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les pelles hydrauliques sur chenilles sont éligibles à la catégorie B1 si > 6 tonnes.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une pelle multifonctions est un engin de catégorie A.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les pelles multifonctions ne relèvent jamais de B1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une pelle hydraulique de 20 tonnes appartient à B1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les pelles hydrauliques de catégorie B1 doivent obligatoirement être sur chenilles.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les engins de catégorie B1 sont utilisés pour l’extraction à déplacement séquentiel.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une pelle multifonctions peut appartenir à une autre catégorie que B1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une pelle de 6 tonnes pile est en catégorie B1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les chargeuses sur pneumatiques de plus de 6 tonnes appartiennent à la catégorie C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse-pelleteuse de 7 tonnes relève de la catégorie C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les chargeuses sur pneus ≤ 6 tonnes sont en C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une chargeuse-pelleteuse de 5 tonnes est classée en C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les chargeuses sur pneumatiques > 6 tonnes sont des engins de chargement alternatif.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les chargeuses-pelleteuses > 6 tonnes sont dans la catégorie C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une pelleteuse hydraulique de 10 tonnes est en catégorie C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une chargeuse sur pneus de 12 tonnes est en catégorie C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse-pelleteuse de 9 tonnes appartient à la catégorie C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les chargeuses sur chenilles > 6 tonnes sont dans la catégorie C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une chargeuse sur pneus de 6 tonnes appartient à la catégorie C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "La catégorie C1 concerne uniquement les engins sur pneumatiques.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse-pelleteuse de 7 tonnes relève de la catégorie C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les chargeuses sur pneumatiques de 4 tonnes appartiennent à la catégorie C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Toutes les chargeuses, quel que soit leur poids, sont classées en catégorie C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une chargeuse-pelleteuse de 12 tonnes est en catégorie C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les chargeuses > 6 tonnes appartiennent à la catégorie C1 uniquement si sur pneumatiques.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse sur chenilles de 7 tonnes est incluse dans la catégorie C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les engins de catégorie C1 sont des engins de chargement.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse-pelleteuse de 10 tonnes n’appartient pas à la catégorie C1.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les bouteurs sont classés dans la catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les chargeuses à chenilles de plus de 6 tonnes appartiennent à la catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse à chenilles de 4 tonnes relève de la catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un bouteur appartient toujours à la catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse sur pneus de 10 tonnes appartient à la catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une chargeuse à chenilles de 8 tonnes fait partie de la catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les bouteurs sont des engins de nivellement et non de réglage.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une chargeuse à chenilles de 7 tonnes appartient à la catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une pelle hydraulique de 20 tonnes est en catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "La catégorie C2 concerne les engins de réglage à déplacement alternatif.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les chargeuses à chenilles ≤ 6 tonnes sont classées en catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un bouteur de grande taille appartient à la catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les chargeuses à chenilles ne sont pas concernées par la catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une chargeuse sur pneus > 6 tonnes relève de la catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Tout bouteur est en catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse à chenilles de 12 tonnes est incluse dans la catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "La catégorie C2 concerne les engins de réglage.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les bouteurs légers < 6 tonnes appartiennent à la catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse à chenilles de 5 tonnes est incluse dans la catégorie C2.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "La catégorie C2 inclut les chargeuses à chenilles uniquement au-delà de 6 tonnes.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les niveleuses automotrices appartiennent à la catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un bouteur est classé en catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une niveleuse automotrice de grande taille relève de la catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse à chenilles est en catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "La catégorie C3 est réservé exclusivement aux niveleuses.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une niveleuse automotrice de 10 tonnes appartient à la catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une pelle multifonctions appartient à la catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une niveleuse automotrice est un engin de nivellement.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les tombereaux sont classés en catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une niveleuse automotrice neuve appartient à la catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les compacteurs font partie de la catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une niveleuse automotrice, quel que soit son poids, appartient à la catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les engins de réglage sont dans la catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les niveleuses automotrices constituent l’unique famille d’engins en catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "La catégorie C3 regroupe tous les engins automoteurs.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une niveleuse automotrice de 20 tonnes relève de la catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse-pelleteuse appartient à la catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une niveleuse automotrice de 6 tonnes appartient à C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les finisseurs routiers sont classés en catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Toutes les niveleuses automotrices sont classées en catégorie C3.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les compacteurs de plus de 6 tonnes appartiennent à la catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un compacteur à pieds dameurs de 8 tonnes est en catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un compacteur de 5 tonnes appartient à la catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les compacteurs mixtes de plus de 6 tonnes relèvent de la catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un compacteur à pneumatiques de 20 tonnes est en catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les compacteurs à pieds dameurs ≤ 6 tonnes sont classés en catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les compacteurs à cylindres > 6 tonnes sont inclus en catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les compacteurs de masse ≤ 6 tonnes relèvent de la catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Tous les compacteurs, quelle que soit leur masse, sont en catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un compacteur mixte de 7 tonnes est un engin de catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un compacteur de 9 tonnes appartient à la catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse de 8 tonnes est en catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un compacteur à pieds dameurs de 12 tonnes relève de la catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les compacteurs routiers de faible masse sont en catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les compacteurs à pneumatiques de plus de 6 tonnes appartiennent à la catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les compacteurs de masse > 6 tonnes appartiennent à une autre catégorie que la D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un compacteur à cylindres léger est en catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les compacteurs > 6 tonnes sont intégralement dans la catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un compacteur à cylindres de 15 tonnes relève de la catégorie D.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les tombereaux, rigides ou articulés, sont classés en catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un moto-basculeur de plus de 6 tonnes de charge utile appartient à la catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un tombereau de 3 tonnes appartient à la catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les tracteurs agricoles de plus de 100 cv relèvent de la catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un moto-basculeur de 5 tonnes de charge utile est en catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Tous les tracteurs, quelle que soit leur puissance, sont en catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un tombereau articulé de grande taille est en catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les tracteurs agricoles ≤ 100 cv appartiennent à la catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un moto-basculeur de 7 tonnes de charge utile appartient à la catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les tombereaux rigides sont inclus dans la catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse sur pneus de 12 tonnes relève de la catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un tracteur agricole de 150 cv relève de la catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un tombereau articulé appartient à la catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les moto-basculeurs ≤ 6 tonnes de charge utile appartiennent à la catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un tombereau sur chenilles est classé en catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Tous les engins transportant des matériaux sont en catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un tracteur agricole > 73,6 kW appartient à la catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un tombereau articulé de 50 tonnes relève de la catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les tombereaux doivent obligatoirement être articulés pour être en catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un moto-basculeur de 10 tonnes de charge utile appartient à la catégorie E.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les chariots à mât tout-terrain à conducteur porté appartiennent à la catégorie F.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les chariots à flèche télescopique tout-terrain appartiennent à la catégorie F.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une chargeuse-pelleteuse relève de la catégorie F.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un chariot télescopique tout-terrain de 10 m est en catégorie F.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les chariots de magasinage (industriels) appartiennent à la catégorie F.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les chariots à mât tout-terrain à conducteur porté sont en catégorie F.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un chariot élévateur électrique de magasin est en catégorie F.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un chariot télescopique tout-terrain relève de la catégorie F.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les engins de transport sont classés en catégorie F.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un chariot télescopique tout-terrain est un engin de la catégorie F.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Une niveleuse ne peut pas être considérée dans la catégorie F.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un tracteur agricole puissant est classé en catégorie F.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Les chariots tout-terrain appartiennent exclusivement à la catégorie F.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "La catégorie G concerne le déplacement d’engins sans activité de production.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "La catégorie G inclut le chargement/déchargement sur porte-engins.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un engin en activité de production est classé en catégorie G.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une pelle hydraulique en travail de terrassement relève de la catégorie G.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "La catégorie G s’applique aux essais et démonstrations.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les engins doivent être modifiés pour appartenir à la catégorie G.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "La catégorie G est liée à la conduite hors production.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Les engins agricoles seuls sont dans la catégorie G.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Une chargeuse travaillant en carrière est un engin de catégorie G.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "La catégorie G concerne uniquement les tombereaux.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un test fonctionnel d’un engin relève de la catégoire G.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "Un compacteur travaillant sur chantier est en catégorie G.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Tous les engins A-F peuvent être concernés par la catégorie G.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  },
+  {
+    "text": "La catégorie G concerne uniquement les engins en maintenance.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Faux"
+  },
+  {
+    "text": "Un engin utilisé pour une démonstration relève de la catégorie G.",
+    "answers": [
+      "Vrai",
+      "Faux"
+    ],
+    "correct": "Vrai"
+  }
+]
+;
+
+/* ============================ */
+/*         VARIABLES D'ÉTAT     */
+/* ============================ */
+let selectedQuestions = [];
+let currentIndex = 0;
+let userAnswers = [];
+let candidateName = "";
+
+/* ============================ */
+/*         UTILITAIRES          */
+/* ============================ */
+function formatDateTime(isoString) {
+  const date = new Date(isoString);
+  const d = String(date.getDate()).padStart(2,'0');
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const y = date.getFullYear();
+  const hh = String(date.getHours()).padStart(2,'0');
+  const min = String(date.getMinutes()).padStart(2,'0');
+  const sec = String(date.getSeconds()).padStart(2,'0');
+  return `${d}/${m}/${y} ${hh}:${min}:${sec}`;
+}
+
+function getRandomQuestions(num) {
+  let used = JSON.parse(localStorage.getItem("usedQuestions") || "[]");
+  let available = allQuestions.filter(q => !used.includes(q.text));
+  if (available.length < num) { used=[]; available=[...allQuestions]; }
+  available.sort(() => Math.random() - 0.5);
+  const selected = available.slice(0, num);
+  selected.forEach(q => used.push(q.text));
+  localStorage.setItem("usedQuestions", JSON.stringify(used));
+  return selected;
+}
+
+/* ============================ */
+/*     AFFICHAGE ET NAVIGATION  */
+/* ============================ */
+function showIntro() {
+  document.getElementById('intro').style.display = 'flex';
+  document.getElementById('quiz').style.display = 'none';
+  document.getElementById('restartBtn').style.display = 'none';
+  document.getElementById('result').textContent = '';
+  document.getElementById('saveStatus').textContent = '';
+
+  const nameInput = document.getElementById('candidateName');
+  const startBtn = document.getElementById('startBtn');
+
+  nameInput.value = "";
+  startBtn.disabled = true;
+
+  nameInput.oninput = () => { startBtn.disabled = nameInput.value.trim() === ""; };
+}
+
+function startQuiz() {
+  candidateName = document.getElementById('candidateName').value.trim();
+  if (!candidateName) return;
+
+  document.getElementById('intro').style.display = 'none';
+  document.getElementById('quiz').style.display = 'flex';
+  document.getElementById('restartBtn').style.display = 'none';
+  document.getElementById('saveStatus').textContent = '';
+
+  selectedQuestions = getRandomQuestions(20);
+  currentIndex = 0;
+  userAnswers = new Array(selectedQuestions.length).fill("");
+
+  document.getElementById('quizSubtitle').textContent =
+    `Répondez à ${selectedQuestions.length} questions tirées au hasard`;
+
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = selectedQuestions[currentIndex];
+
+  const optionsHtml = q.answers.map((a, idx) => {
+    const inputId = `q${currentIndex}_opt${idx}`;
+    return `<label for="${inputId}">
+              <input id="${inputId}" type="radio" name="q" value="${a}"> ${a}
+            </label>`;
+  }).join("");
+
+  document.getElementById('quiz').innerHTML = `
+    <div class="question">
+      ${q.image ? `<img src="${q.image}" alt="Illustration question"
+      style="max-width:100%; height:auto; margin-bottom:10px; border-radius:6px;">` : ''}
+      <p>⚙️ <strong>Question ${currentIndex + 1} :</strong> ${q.text}</p>
+      <div class="answers">${optionsHtml}</div>
+      <div style="margin-top:15px; text-align:center;">
+        <button id="nextBtnInternal" disabled>
+          ${(currentIndex === selectedQuestions.length - 1) ? "🏁 Terminer" : "➡️ Suivant"}
+        </button>
+      </div>
+    </div>
+  `;
+
+  const nextBtn = document.getElementById('nextBtnInternal');
+
+  document.querySelectorAll('input[name="q"]').forEach(radio => {
+    radio.addEventListener('change', () => { nextBtn.disabled = false; });
+  });
+
+  nextBtn.addEventListener('click', () => {
+    const selected = document.querySelector('input[name="q"]:checked');
+    if (!selected) return;
+
+    userAnswers[currentIndex] = selected.value;
+
+    if (currentIndex < selectedQuestions.length - 1) {
+      currentIndex++;
+      renderQuestion();
+    } else {
+      showResults();
+    }
+  });
+}
+
+/* ============================ */
+/*        AFFICHAGE RESULTATS    */
+/* ============================ */
+function buildResultObject() {
+  const now = new Date();
+  let score = 0;
+  const details = selectedQuestions.map((q,i) => {
+    const given = userAnswers[i] || "";
+    if(given === q.correct) score++;
+    return { question:q.text, given, correct:q.correct };
+  });
+  return {
+    timestamp: now.toISOString(),
+    candidate:candidateName,
+    score,
+    total:selectedQuestions.length,
+    details,
+    quiz:QUIZ_NAME
+  };
+}
+
+function showResults() {
+  document.getElementById('quiz').innerHTML = `
+    <div class="question">
+      <p>⚙️ Vérification de vos réponses...</p>
+    </div>
+  `;
+  document.getElementById('saveStatus').textContent = '';
+  sendResults();
+}
+
+function sendResults() {
+  const payload = buildResultObject();
+  const statusEl = document.getElementById('saveStatus');
+
+  statusEl.textContent = "Envoi en cours...";
+
+  fetch(RESULTS_ENDPOINT, {
+    method:"POST",
+    mode:"no-cors",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(payload)
+  })
+  .then(() => {
+    statusEl.textContent = "Envoi réussi ✔️";
+
+    const score = payload.score;
+    const timestamp = formatDateTime(payload.timestamp);
+
+    document.getElementById('quiz').innerHTML = `
+      <div class="question">
+        <p>🏷️ Candidat : <strong>${payload.candidate}</strong></p>
+        <p>🏁 Résultat : <span style="color:var(--orange); font-weight:700;">${score}</span> / ${payload.total}</p>
+        <p>⏱️ Réalisé le : <strong>${timestamp}</strong></p>
+      </div>
+    `;
+
+    document.getElementById('restartBtn').style.display = 'inline-block';
+  })
+  .catch(err => {
+    statusEl.textContent = "Erreur: " + err.message;
+  });
+}
+
+/* ============================ */
+/*        REDÉMARRER            */
+/* ============================ */
+function restartQuiz() { showIntro(); }
+
+/* ============================ */
+/*      INITIALISATION          */
+/* ============================ */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('quizBanner').textContent = `🚧 ${QUIZ_NAME} 🚜`;
+  document.getElementById('startBtn').addEventListener('click', startQuiz);
+  document.getElementById('restartBtn').addEventListener('click', restartQuiz);
+  showIntro();
+});
+</script>
+</body>
+</html>
